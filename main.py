@@ -6,6 +6,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import imageio_ffmpeg
+os.environ["PATH"] += os.pathsep + os.path.dirname(imageio_ffmpeg.get_ffmpeg_exe())
+
 app = Flask(__name__)
 
 API_KEY = os.getenv("API_KEY")
