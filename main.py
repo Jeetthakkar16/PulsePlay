@@ -45,26 +45,19 @@ def get_audio_url(video_id):
     url = f"https://www.youtube.com/watch?v={video_id}"
 
     ydl_opts = {
-        'format': 'bestaudio[ext=webm]/bestaudio',  # safer formats
+        'format': 'bestaudio/best',
         'quiet': True,
         'noplaylist': True,
 
-        # 🔥 Pretend like Android device
         'extractor_args': {
             'youtube': {
                 'player_client': ['android']
             }
         },
 
-        # 🔥 Strong headers
         'http_headers': {
-            'User-Agent': 'com.google.android.youtube/17.31.35 (Linux; U; Android 11)',
-            'Accept-Language': 'en-US,en;q=0.9'
+            'User-Agent': 'com.google.android.youtube/17.31.35 (Linux; Android 11)',
         },
-
-        # 🔥 Reduce failures
-        'nocheckcertificate': True,
-        'ignoreerrors': True,
     }
 
     try:
@@ -74,7 +67,17 @@ def get_audio_url(video_id):
             if not info:
                 return None
 
-            return info.get('url')
+            # 🔥 MAIN FIX
+            if 'url' in info:
+                return info['url']
+
+            # fallback: get from formats
+            if 'formats' in info:
+                for f in info['formats']:
+                    if f.get('acodec') != 'none':  # audio stream
+                        return f.get('url')
+
+            return None
 
     except Exception as e:
         print("yt-dlp error:", e)
