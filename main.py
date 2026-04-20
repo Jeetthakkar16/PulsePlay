@@ -95,27 +95,18 @@ def home():
 @app.route('/search')
 def search():
     query = request.args.get("q", "").strip()
-
-    print("QUERY:", query)
-
     if not query:
         return "❌ Please enter a song name"
 
     result = search_youtube(query)
-
     if not result:
         return "❌ YouTube API failed or no results"
 
-    audio_url = get_audio_url(result["video_id"])
-
-    if not audio_url:
-        return "❌ Audio extraction failed"
-
+    # Pass video_id instead of audio_url
     return render_template("player.html",
-                           title=result["title"],
-                           thumbnail=result["thumbnail"],
-                           audio_url=audio_url)
-
+        title=result["title"],
+        thumbnail=result["thumbnail"],
+        video_id=result["video_id"])  # ← use embed instead
 
 if __name__ == '__main__':
     app.run(debug=True)
