@@ -65,9 +65,13 @@
 
     <img src="{{ thumbnail }}" class="thumbnail" id="thumb">
 
-    <audio id="audio" autoplay>
-        <source src="{{ audio_url }}">
-    </audio>
+   <iframe 
+  width="560" height="315"
+  src="https://www.youtube.com/embed/{{ video_id }}"
+  frameborder="0"
+  allow="autoplay; encrypted-media"
+  allowfullscreen>
+</iframe>
 
     <div>
         <button onclick="playSong()">▶</button>
