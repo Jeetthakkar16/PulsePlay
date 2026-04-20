@@ -46,48 +46,45 @@ def search_youtube(query):
 # 🎧 Extract audio
 def get_audio_url(video_id):
     url = f"https://www.youtube.com/watch?v={video_id}"
-    ydl_opts = {
-        'quiet': True,
-        'noplaylist': True,
-        'format': 'bestaudio/best',
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['ios', 'web'],  # ios is more reliable than android
-                'skip': ['dash', 'hls'],
-            }
-        },
-        'http_headers': {
-            'User-Agent': 'com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1 like Mac OS X)',
-        },
-    }
+    
+    # Try multiple clients in order
+    clients = ['ios', 'web_creator', 'tv_embedded']
+    
+    for client in clients:
+        ydl_opts = {
+            'quiet': False,
+            'noplaylist': True,
+            'format': 'bestaudio/best',
+            'extractor_args': {
+                'youtube': {
+                    'player_client': [client],
+                }
+            },
+        }
+        try:
+            with YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                if not info:
+                    continue
 
-    try:
-        with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            if not info:
-                return None
+                formats = info.get("formats", [])
 
-            formats = info.get("formats", [])
+                for f in reversed(formats):
+                    if f.get("acodec") != "none" and f.get("vcodec") == "none":
+                        if f.get("url"):
+                            print(f"✅ Got audio via client: {client}")
+                            return f["url"]
 
-            # Best: audio-only stream
-            for f in reversed(formats):  # reversed = best quality last
-                if f.get("acodec") != "none" and f.get("vcodec") == "none":
-                    audio_url = f.get("url")
-                    if audio_url:
-                        return audio_url
+                for f in reversed(formats):
+                    if f.get("acodec") != "none":
+                        if f.get("url"):
+                            return f["url"]
 
-            # Fallback: any format with audio
-            for f in reversed(formats):
-                if f.get("acodec") != "none":
-                    audio_url = f.get("url")
-                    if audio_url:
-                        return audio_url
+        except Exception as e:
+            print(f"❌ Client {client} failed: {e}")
+            continue
 
-            return None
-
-    except Exception as e:
-        print("yt-dlp error:", e)
-        return None
+    return None
 # 🏠 Home page
 @app.route('/')
 def home():
