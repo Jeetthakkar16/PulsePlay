@@ -3,3 +3,4 @@ requests
 yt-dlp==2025.3.31
 gunicorn
 python-dotenv
+imageio-ffmpeg
