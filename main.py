@@ -46,17 +46,28 @@ def get_audio_url(video_id):
 
     ydl_opts = {
         'format': 'bestaudio/best',
-        'quiet': True
+        'quiet': True,
+        'noplaylist': True,
+
+        # 🔥 IMPORTANT FIXES
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android']   # mimic mobile
+            }
+        },
+
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0'
+        }
     }
 
     try:
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-            return info['url']
+            return info.get('url')
     except Exception as e:
         print("yt-dlp error:", e)
         return None
-
 
 # 🏠 Home page
 @app.route('/')
