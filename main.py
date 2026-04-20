@@ -45,16 +45,13 @@ def get_audio_url(video_id):
     url = f"https://www.youtube.com/watch?v={video_id}"
 
     ydl_opts = {
-        'format': 'bestaudio/best',
         'quiet': True,
         'noplaylist': True,
-
         'extractor_args': {
             'youtube': {
                 'player_client': ['android']
             }
         },
-
         'http_headers': {
             'User-Agent': 'com.google.android.youtube/17.31.35 (Linux; Android 11)',
         },
@@ -67,15 +64,18 @@ def get_audio_url(video_id):
             if not info:
                 return None
 
-            # 🔥 MAIN FIX
-            if 'url' in info:
-                return info['url']
+            # 🔥 Try formats (BEST APPROACH)
+            formats = info.get("formats", [])
 
-            # fallback: get from formats
-            if 'formats' in info:
-                for f in info['formats']:
-                    if f.get('acodec') != 'none':  # audio stream
-                        return f.get('url')
+            # Priority: audio-only formats
+            for f in formats:
+                if f.get("acodec") != "none" and f.get("vcodec") == "none":
+                    return f.get("url")
+
+            # Fallback: any format with audio
+            for f in formats:
+                if f.get("acodec") != "none":
+                    return f.get("url")
 
             return None
 
