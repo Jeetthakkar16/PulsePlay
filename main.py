@@ -15,7 +15,6 @@ def decrypt_url(encrypted_url):
     enc = base64.b64decode(encrypted_url.replace("_", "/").replace("-", "+") + "==")
     cipher = DES.new(key, DES.MODE_CBC, iv)
     decrypted = cipher.decrypt(enc)
-    # Fix: strip padding bytes properly
     url = decrypted[:-decrypted[-1]].decode('utf-8').strip()
     url = url.replace("_96.", "_320.").replace("96.mp4", "320.mp4")
     return url
@@ -45,9 +44,10 @@ def search_saavn(query):
         artist = song.get("more_info", {}).get("singers", "")
         image = song.get("image", "").replace("150x150", "500x500")
         encrypted_url = song["more_info"]["encrypted_media_url"]
-        audio_url = decrypt_url(encrypted_url)
 
-        print(f"✅ Found: {title} | URL: {audio_url[:60]}...")
+        print(f"Encrypted URL: {encrypted_url}")
+        audio_url = decrypt_url(encrypted_url)
+        print(f"✅ Decrypted audio URL: {audio_url}")
 
         return {
             "title": title,
@@ -73,6 +73,8 @@ def search():
         return "❌ Please enter a song name"
 
     result = search_saavn(query)
+    print(f"Final result: {result}")
+
     if not result or not result["audio_url"]:
         return "❌ Song not found"
 
