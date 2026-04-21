@@ -69,31 +69,37 @@ def stream():
     if not video_id:
         return "Missing video ID", 400
 
-    tmp_path = f"/tmp/{video_id}.m4a"  # ← changed to m4a, more compatible
+    # Check for any already downloaded format
+    for ext in ['m4a', 'webm', 'mp3', 'opus']:
+        cached = f"/tmp/{video_id}.{ext}"
+        if os.path.exists(cached):
+            print(f"✅ Serving cached: {cached}")
+            return send_file(cached, conditional=True)
 
-    if not os.path.exists(tmp_path):
-        url = f"https://www.youtube.com/watch?v={video_id}"
-        ydl_opts = {
-            'quiet': False,
-            'noplaylist': True,
-            'format': 'bestaudio[ext=m4a]/bestaudio/best',
-            'outtmpl': tmp_path,
-            'cookiefile': COOKIE_FILE if os.path.exists(COOKIE_FILE) else None,  # ← NEW
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['ios']
-                }
-            },
-        }
-        try:
-            with YoutubeDL(ydl_opts) as ydl:
-                ydl.download([url])
-        except Exception as e:
-            print("❌ yt-dlp download error:", e)
-            return f"Audio extraction failed: {str(e)}", 500
+    url = f"https://www.youtube.com/watch?v={video_id}"
+    tmp_path = f"/tmp/{video_id}.%(ext)s"  # ← let yt-dlp pick the extension
 
-    return send_file(tmp_path, mimetype='audio/mp4', conditional=True)
+    ydl_opts = {
+        'quiet': False,
+        'noplaylist': True,
+        'format': 'bestaudio/best',
+        'outtmpl': tmp_path,
+        'cookiefile': COOKIE_FILE if os.path.exists(COOKIE_FILE) else None,
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['ios']
+            }
+        },
+    }
 
-
-if __name__ == '__main__':
+    try:
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            ext = info.get('ext', 'm4a')
+            actual_path = f"/tmp/{video_id}.{ext}"
+            print(f"✅ Downloaded as: {actual_path}")
+            return send_file(actual_path, conditional=True)
+    except Exception as e:
+        print("❌ yt-dlp error:", e)
+        return f"Audio extraction failed: {str(e)}", 500
     app.run(debug=True)
