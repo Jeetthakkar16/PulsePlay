@@ -9,14 +9,14 @@ app = Flask(__name__)
 
 def search_saavn(query):
     try:
-        url = "https://saavn.dev/api/search/songs"
+        url = "https://jiosaavn-api-privatecoder.vercel.app/search/songs"
         params = {"query": query, "page": 1, "limit": 1}
         res = requests.get(url, params=params, timeout=10)
         data = res.json()
+        print("Saavn response:", data)
 
         song = data["data"]["results"][0]
 
-        # Get highest quality URL
         download_url = None
         for quality in ["320kbps", "160kbps", "96kbps"]:
             for item in song.get("downloadUrl", []):
