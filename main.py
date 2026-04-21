@@ -34,7 +34,6 @@ def decrypt_url(encrypted_url):
         print(f"Decrypt error: {e}")
         return None
 
-
 def search_saavn(query):
     try:
         url = "https://www.jiosaavn.com/api.php"
