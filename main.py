@@ -10,6 +10,16 @@ os.environ["PATH"] += os.pathsep + os.path.dirname(imageio_ffmpeg.get_ffmpeg_exe
 
 app = Flask(__name__)
 API_KEY = os.getenv("API_KEY")
+YOUTUBE_COOKIES = os.getenv("YOUTUBE_COOKIES")  # ← NEW
+
+# Write cookies to /tmp at startup ← NEW
+COOKIE_FILE = "/tmp/yt_cookies.txt"
+if YOUTUBE_COOKIES:
+    with open(COOKIE_FILE, "w") as f:
+        f.write(YOUTUBE_COOKIES)
+    print("✅ Cookies written successfully")
+else:
+    print("⚠️ No cookies found in environment")
 
 
 def search_youtube(query):
@@ -59,16 +69,16 @@ def stream():
     if not video_id:
         return "Missing video ID", 400
 
-    tmp_path = f"/tmp/{video_id}.webm"
+    tmp_path = f"/tmp/{video_id}.m4a"  # ← changed to m4a, more compatible
 
-    # Use cached file if already downloaded
     if not os.path.exists(tmp_path):
         url = f"https://www.youtube.com/watch?v={video_id}"
         ydl_opts = {
             'quiet': False,
             'noplaylist': True,
-            'format': 'bestaudio[ext=webm]/bestaudio/best',
+            'format': 'bestaudio[ext=m4a]/bestaudio/best',
             'outtmpl': tmp_path,
+            'cookiefile': COOKIE_FILE if os.path.exists(COOKIE_FILE) else None,  # ← NEW
             'extractor_args': {
                 'youtube': {
                     'player_client': ['ios']
@@ -80,10 +90,9 @@ def stream():
                 ydl.download([url])
         except Exception as e:
             print("❌ yt-dlp download error:", e)
-            return "Audio extraction failed", 500
+            return f"Audio extraction failed: {str(e)}", 500
 
-    # send_file handles Range requests → duration + seeking works
-    return send_file(tmp_path, mimetype='audio/webm', conditional=True)
+    return send_file(tmp_path, mimetype='audio/mp4', conditional=True)
 
 
 if __name__ == '__main__':
