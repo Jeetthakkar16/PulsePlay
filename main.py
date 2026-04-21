@@ -1,62 +1,63 @@
 from flask import Flask, request, render_template
 import requests
+import base64
 import os
+from Crypto.Cipher import DES
 from dotenv import load_dotenv
 
 load_dotenv()
 app = Flask(__name__)
 
 
+def decrypt_url(encrypted_url):
+    key = b"38346591"
+    iv = b"\x00" * 8
+    enc = base64.b64decode(encrypted_url.replace("_", "/").replace("-", "+") + "==")
+    cipher = DES.new(key, DES.MODE_CBC, iv)
+    decrypted = cipher.decrypt(enc)
+    url = decrypted.decode('utf-8').strip('\x00\x01\x02\x03\x04\x05\x06\x07\x08').strip()
+    url = url.replace("_96.", "_320.").replace("96.mp4", "320.mp4")
+    return url
+
+
 def search_saavn(query):
-    apis = [
-        "https://jiosaavn-api-privatecoder.vercel.app/search/songs",
-        "https://jiosaavn-api-sigma.vercel.app/api/search/songs",
-        "https://jiosaavn-api-ts.vercel.app/search/songs",
-    ]
+    try:
+        url = "https://www.jiosaavn.com/api.php"
+        params = {
+            "__call": "search.getResults",
+            "_format": "json",
+            "_marker": "0",
+            "api_version": "4",
+            "ctx": "web6dot0",
+            "n": "1",
+            "q": query
+        }
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+        res = requests.get(url, params=params, headers=headers, timeout=10)
+        print(f"JioSaavn status: {res.status_code}")
+        data = res.json()
 
-    for api_url in apis:
-        try:
-            params = {"query": query, "page": 1, "limit": 1}
-            res = requests.get(api_url, params=params, timeout=8)
-            print(f"Trying {api_url} → status {res.status_code}")
+        song = data["results"][0]
+        title = song["title"]
+        artist = song.get("more_info", {}).get("singers", "")
+        image = song.get("image", "").replace("150x150", "500x500")
+        encrypted_url = song["more_info"]["encrypted_media_url"]
+        audio_url = decrypt_url(encrypted_url)
 
-            if res.status_code != 200 or not res.text.strip():
-                print(f"Empty or bad response from {api_url}")
-                continue
+        print(f"✅ Found: {title} | URL: {audio_url[:60]}...")
 
-            data = res.json()
-            print("Saavn response:", data)
+        return {
+            "title": title,
+            "artist": artist,
+            "thumbnail": image,
+            "audio_url": audio_url
+        }
 
-            results = data.get("data", {}).get("results", [])
-            if not results:
-                continue
-
-            song = results[0]
-
-            download_url = None
-            for quality in ["320kbps", "160kbps", "96kbps"]:
-                for item in song.get("downloadUrl", []):
-                    if item["quality"] == quality and item["url"]:
-                        download_url = item["url"]
-                        break
-                if download_url:
-                    break
-
-            if not download_url:
-                continue
-
-            return {
-                "title": song["name"],
-                "artist": song["artists"]["primary"][0]["name"] if song["artists"]["primary"] else "",
-                "thumbnail": song["image"][-1]["url"],
-                "audio_url": download_url
-            }
-
-        except Exception as e:
-            print(f"Error with {api_url}: {e}")
-            continue
-
-    return None
+    except Exception as e:
+        print(f"JioSaavn error: {e}")
+        return None
 
 
 @app.route('/')
