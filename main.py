@@ -12,31 +12,22 @@ app = Flask(__name__)
 def decrypt_url(encrypted_url):
     try:
         key = b"38346591"
-        iv = b"\x00" * 8
         
-        # Fix base64 padding properly
         enc_url = encrypted_url.strip()
-        # Add padding
         missing_padding = len(enc_url) % 4
         if missing_padding:
             enc_url += "=" * (4 - missing_padding)
         
         enc = base64.b64decode(enc_url)
-        print(f"Encrypted bytes length: {len(enc)}")
         
-        cipher = DES.new(key, DES.MODE_CBC, iv)
+        cipher = DES.new(key, DES.MODE_ECB)  # ← ECB not CBC
         decrypted = cipher.decrypt(enc)
-        print(f"Decrypted raw bytes: {decrypted}")
         
         # Remove PKCS7 padding
         pad_len = decrypted[-1]
-        print(f"Pad length: {pad_len}")
-        unpadded = decrypted[:-pad_len]
-        print(f"Unpadded bytes: {unpadded}")
-        
-        url = unpadded.decode('utf-8').strip()
+        url = decrypted[:-pad_len].decode('utf-8').strip()
         url = url.replace("_96.", "_320.").replace("96.mp4", "320.mp4")
-        print(f"Final URL: {url}")
+        print(f"✅ Decrypted URL: {url}")
         return url
         
     except Exception as e:
