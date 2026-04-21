@@ -5,6 +5,12 @@ import os
 from Crypto.Cipher import DES
 from dotenv import load_dotenv
 
+from urllib.parse import quote
+
+@app.template_filter('urlencode')
+def urlencode_filter(s):
+    return quote(str(s))
+
 load_dotenv()
 app = Flask(__name__)
 
