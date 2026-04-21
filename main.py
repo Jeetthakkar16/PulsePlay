@@ -15,7 +15,8 @@ def decrypt_url(encrypted_url):
     enc = base64.b64decode(encrypted_url.replace("_", "/").replace("-", "+") + "==")
     cipher = DES.new(key, DES.MODE_CBC, iv)
     decrypted = cipher.decrypt(enc)
-    url = decrypted.decode('utf-8').strip('\x00\x01\x02\x03\x04\x05\x06\x07\x08').strip()
+    # Fix: strip padding bytes properly
+    url = decrypted[:-decrypted[-1]].decode('utf-8').strip()
     url = url.replace("_96.", "_320.").replace("96.mp4", "320.mp4")
     return url
 
