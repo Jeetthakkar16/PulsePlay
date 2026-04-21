@@ -12,14 +12,14 @@ app = Flask(__name__)
 API_KEY = os.getenv("API_KEY")
 YOUTUBE_COOKIES = os.getenv("YOUTUBE_COOKIES")  # ← NEW
 
-# Write cookies to /tmp at startup ← NEW
 COOKIE_FILE = "/tmp/yt_cookies.txt"
 if YOUTUBE_COOKIES:
+    # Fix newlines that get mangled in env vars
+    cookie_content = YOUTUBE_COOKIES.replace('\\n', '\n').strip()
     with open(COOKIE_FILE, "w") as f:
-        f.write(YOUTUBE_COOKIES)
+        f.write(cookie_content)
     print("✅ Cookies written successfully")
-else:
-    print("⚠️ No cookies found in environment")
+    print(f"✅ Cookie file size: {os.path.getsize(COOKIE_FILE)} bytes")
 
 
 def search_youtube(query):
@@ -78,7 +78,7 @@ def stream():
         return send_file(existing[0], conditional=True)
 
     url = f"https://www.youtube.com/watch?v={video_id}"
-    ydl_opts = {
+   ydl_opts = {
     'quiet': False,
     'noplaylist': True,
     'format': 'bestaudio/best',
@@ -86,11 +86,14 @@ def stream():
     'cookiefile': COOKIE_FILE if os.path.exists(COOKIE_FILE) else None,
     'extractor_args': {
         'youtube': {
-            'player_client': ['web'],  # ← CHANGED from ios to web
+            'player_client': ['web'],
+            'skip': ['hls', 'dash'],  # ← skip problematic formats
         }
     },
+    'http_headers': {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    }
 }
-
     try:
         with YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
