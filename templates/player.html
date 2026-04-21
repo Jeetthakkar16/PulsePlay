@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }} - PulsePlay</title>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #121212;
             color: white;
@@ -14,39 +15,47 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            margin: 0;
             padding: 20px;
-            box-sizing: border-box;
         }
         img {
-            width: 300px;
-            border-radius: 12px;
-            margin-bottom: 20px;
+            width: 280px;
+            height: 280px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            object-fit: cover;
         }
         h2 {
             text-align: center;
-            margin-bottom: 20px;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
+            margin-bottom: 6px;
+            max-width: 400px;
+        }
+        p {
+            color: #aaa;
+            margin-bottom: 24px;
+            font-size: 0.95rem;
         }
         audio {
             width: 100%;
             max-width: 400px;
+            margin-bottom: 20px;
         }
         a {
-            margin-top: 20px;
             color: #1db954;
             text-decoration: none;
+            font-size: 0.95rem;
         }
+        a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-    <img src="{{ thumbnail }}" alt="Thumbnail">
+    <img src="{{ thumbnail }}" alt="{{ title }}">
     <h2>{{ title }}</h2>
-
+    <p>{{ artist }}</p>
     <audio controls autoplay>
-    <source src="/stream?v={{ video_id }}">
+        <source src="{{ audio_url }}" type="audio/mpeg">
     </audio>
-
     <a href="/">← Search again</a>
 </body>
 </html>
