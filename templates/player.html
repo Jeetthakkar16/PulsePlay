@@ -39,7 +39,11 @@
         audio {
             width: 100%;
             max-width: 400px;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+        }
+        .links {
+            display: flex;
+            gap: 20px;
         }
         a {
             color: #1db954;
@@ -50,12 +54,15 @@
     </style>
 </head>
 <body>
-    <img src="{{ thumbnail }}" alt="{{ title }}">
+    <img src="{{ thumbnail }}" alt="{{ title }}" onerror="this.src='https://via.placeholder.com/280x280/282828/aaa?text=♪'">
     <h2>{{ title }}</h2>
     <p>{{ artist }}</p>
     <audio controls autoplay>
         <source src="{{ audio_url }}" type="audio/mpeg">
     </audio>
-    <a href="/">← Search again</a>
+    <div class="links">
+        <a href="javascript:history.back()">← Back to results</a>
+        <a href="/">🔍 New search</a>
+    </div>
 </body>
 </html>
