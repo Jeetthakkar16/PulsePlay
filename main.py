@@ -79,17 +79,17 @@ def stream():
 
     url = f"https://www.youtube.com/watch?v={video_id}"
     ydl_opts = {
-        'quiet': False,
-        'noplaylist': True,
-        'format': 'bestaudio/best',
-        'outtmpl': f'/tmp/{video_id}.%(ext)s',
-        'cookiefile': COOKIE_FILE if os.path.exists(COOKIE_FILE) else None,
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['ios']
-            }
-        },
-    }
+    'quiet': False,
+    'noplaylist': True,
+    'format': 'bestaudio/best',
+    'outtmpl': f'/tmp/{video_id}.%(ext)s',
+    'cookiefile': COOKIE_FILE if os.path.exists(COOKIE_FILE) else None,
+    'extractor_args': {
+        'youtube': {
+            'player_client': ['web'],  # ← CHANGED from ios to web
+        }
+    },
+}
 
     try:
         with YoutubeDL(ydl_opts) as ydl:
