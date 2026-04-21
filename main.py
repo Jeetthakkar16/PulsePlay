@@ -63,27 +63,26 @@ def search():
                            video_id=result["video_id"])
 
 
+import glob
+
 @app.route('/stream')
 def stream():
     video_id = request.args.get("v")
     if not video_id:
         return "Missing video ID", 400
 
-    # Check for any already downloaded format
-    for ext in ['m4a', 'webm', 'mp3', 'opus']:
-        cached = f"/tmp/{video_id}.{ext}"
-        if os.path.exists(cached):
-            print(f"✅ Serving cached: {cached}")
-            return send_file(cached, conditional=True)
+    # Find any already cached file for this video
+    existing = glob.glob(f"/tmp/{video_id}.*")
+    if existing:
+        print(f"✅ Serving cached: {existing[0]}")
+        return send_file(existing[0], conditional=True)
 
     url = f"https://www.youtube.com/watch?v={video_id}"
-    tmp_path = f"/tmp/{video_id}.%(ext)s"  # ← let yt-dlp pick the extension
-
     ydl_opts = {
         'quiet': False,
         'noplaylist': True,
         'format': 'bestaudio/best',
-        'outtmpl': tmp_path,
+        'outtmpl': f'/tmp/{video_id}.%(ext)s',
         'cookiefile': COOKIE_FILE if os.path.exists(COOKIE_FILE) else None,
         'extractor_args': {
             'youtube': {
@@ -94,12 +93,18 @@ def stream():
 
     try:
         with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            ext = info.get('ext', 'm4a')
-            actual_path = f"/tmp/{video_id}.{ext}"
-            print(f"✅ Downloaded as: {actual_path}")
-            return send_file(actual_path, conditional=True)
+            ydl.download([url])
+
+        # Find what yt-dlp actually saved
+        files = glob.glob(f"/tmp/{video_id}.*")
+        print(f"✅ Files found after download: {files}")
+
+        if not files:
+            return "Download failed - file not found", 500
+
+        return send_file(files[0], conditional=True)
+
     except Exception as e:
         print("❌ yt-dlp error:", e)
         return f"Audio extraction failed: {str(e)}", 500
-    app.run(debug=True)
+app.run(debug=True)
